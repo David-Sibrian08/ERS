@@ -8,14 +8,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import DAO.Facade;
-import jndi.Authenticator;
 import middleTier.BusinessDelegate;
 import weblogic.ejbgen.ResourceRef.Auth;
 
 /**
  * Servlet implementation class LoginServlet
  */
-@WebServlet("/LoginServlet")
+/*@WebServlet("/LoginServlet")*/
+@WebServlet(urlPatterns="*")
 public class LoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -32,7 +32,7 @@ public class LoginServlet extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-		this.doPost(request, response);
+		//this.doPost(request, response);
 	}
 
 	/**
@@ -41,12 +41,36 @@ public class LoginServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		String requestURI = request.getRequestURI();
-		UserController fControl  = new UserController();
-		
-		
+		UserController uControl  = new UserController();
 
 		//SWITCH 
+		switch(requestURI){
+			case "/ERS/login.do":{
+				uControl.login(request, response);
+				break;
+			}
 
+			case "/ERS/update.do":{
+				uControl.updateReimbursement(request, response);
+				break;
+			}
+			
+			case "/ERS/insert.do":{
+				uControl.insertReimbursement(request, response);
+				break;
+			}
+			
+			case "/ERS/logout.do":{
+				uControl.logout(request, response);
+				break;
+			}
+			default:{
+				response.setStatus(404);
+				response.sendRedirect("toDO.html");
+			}
+
+		}
+		
 	}
 
 }

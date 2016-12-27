@@ -9,10 +9,13 @@ import java.util.Date;
 import java.util.List;
 
 import beans.Reimbursement;
+import beans.ReimbursementStatus;
+import beans.ReimbursementType;
+import beans.User;
 
 import java.sql.Timestamp;
 
-public class ReimbursementDao {
+public class ReimbursementDao implements AutoCloseable{
 	private Connection conn = null;
 	
 	public ReimbursementDao(Connection conn) {
@@ -20,43 +23,39 @@ public class ReimbursementDao {
 		this.conn = conn;
 	}
 	
-	
 	/**
 	 * implementation of SELECT ALL from reimbursement table
 	 * It will return a list of Reimbursement objects 
 	 * This will be a MANAGER function
+	 * @throws SQLException 
 	 */
-	public ArrayList<Reimbursement> selectAll() {
+	public ArrayList<Reimbursement> selectAll() throws SQLException {
 		//create a list that will store all data from query
 		ArrayList<Reimbursement> selectAllQuery = new ArrayList<>();
 		
 		//construct the select all query
 		String sql = "SELECT * FROM ers_reimbursement";
-		try {
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ResultSet rs = ps.executeQuery();
 			
 			//take the result set and convert it into a list
 			mapRows(rs, selectAllQuery);
 			System.out.println("Printed all");
-		} catch (SQLException e) {
-			System.out.println("QUERY COULD NOT BE PROCESSED");
-			e.printStackTrace();
-		}
-		return selectAllQuery;
+			
+			return selectAllQuery;
 	}
-	
 	
 	/**
 	 * implementation of SELECT BY ID from reimbursement table 
 	 * @param idToSelect Will return a list of all reimbursement that belong to that username 
 	 * This will be an EMPLOYEE function 
+	 * @throws SQLException 
 	 */
-	public ArrayList<Reimbursement> selectByID(int idToSelect) {
+	public ArrayList<Reimbursement> selectByID(int idToSelect) throws SQLException {
 		ArrayList<Reimbursement> selectByQuery = new ArrayList<>();
 		
 		String sql = "SELECT * FROM ers_reimbursement WHERE reimb_id = ?";
-		try {
+
 			PreparedStatement ps = conn.prepareStatement(sql);
 			
 			//pass in the parameter
@@ -68,12 +67,7 @@ public class ReimbursementDao {
 			//place result in a list
 			mapRows(rs, selectByQuery);
 			
-		} catch (SQLException e) {
-			System.out.println("Select By ID could not be completed");
-			e.printStackTrace();
-		}
-		
-		return selectByQuery;
+			return selectByQuery;
 	}
 	
 	/**
@@ -87,6 +81,8 @@ public class ReimbursementDao {
 	 * 
 	 * This function might not be used
 	 */
+/*		MOVED TO REIMBURSEMENT TYPE DAO!!
+
 	public ArrayList<Reimbursement> selectByType(int typeToSelect) {
 		ArrayList<Reimbursement> selectTypeQuery = new ArrayList<>();
 		String sql = "SELECT * FROM ers_reimbursement where REIMB_TYPE_ID = ?";
@@ -105,7 +101,7 @@ public class ReimbursementDao {
 		}
 		return selectTypeQuery;
 	}
-	
+*/	
 	/**
 	 * 
 	 * @param statusToSelect specified reimbursements to show by their status
@@ -113,12 +109,12 @@ public class ReimbursementDao {
 	 * 2 pending
 	 * 3 declined
 	 * @return 
+	 * @throws SQLException 
 	 */
-	public ArrayList<Reimbursement> selectByStatus(int statusToSelect) {
+	public ArrayList<Reimbursement> selectByStatus(int statusToSelect) throws SQLException {
 		ArrayList<Reimbursement> selectStatusQuery = new ArrayList<>();
 		String sql = "SELECT * FROM ers_reimbursement where REIMB_STATUS_ID = ?";
 		
-		try {
 			PreparedStatement ps = conn.prepareStatement(sql);
 			
 			ps.setInt(1, statusToSelect);
@@ -126,22 +122,20 @@ public class ReimbursementDao {
 			ResultSet rs = ps.executeQuery();
 			
 			mapRows(rs, selectStatusQuery);
-		} catch (SQLException e) {
-			System.out.println("Select By Status could not be completed");
-			e.printStackTrace();
-		}
-		return selectStatusQuery;
+
+			return selectStatusQuery;
 	}
 	/**
 	 * 
 	 * @param reimb A reimbursement object with all fields that will be inserted into the DB
 	 * No return type. Should refresh the jsp ideally
+	 * @throws SQLException 
 	 */
-	public void insertReimbursement(Reimbursement reimb) {
+	public void insertReimbursement(Reimbursement reimb) throws SQLException {
 		
 		//1. User should not be making ID's, find largest ID in table and +1 on every insert
 		int nextID;
-		try {
+		
 			nextID = getTheNextID();
 			
 			//2. Once that ID is found, use it (but increase it by 1, done in method)
@@ -156,22 +150,17 @@ public class ReimbursementDao {
 			ps.setTimestamp(3, time);		//submitted day
 			ps.setNull(4, java.sql.Types.TIMESTAMP);							//resolved date
 			ps.setString(5,reimb.getDescription());
-			ps.setInt(6, reimb.getAuthor());
+			ps.setInt(6, reimb.getAuthor().getUserID());
 			ps.setNull(7, java.sql.Types.INTEGER);			//resolver
 			ps.setInt(8, 2);						//1 approved, 2 pending, 3 denied. Automatically pending
-			ps.setInt(9, reimb.getTypeID());
+			ps.setInt(9, reimb.getType().getTypeID());
 			
 			ps.executeUpdate();
 			conn.commit();
 			
 			//selectAll();
 			
-			System.out.println("Reimbursement inserted");
-			
-		} catch (SQLException e) {
-			System.out.println("Update could not be completed");
-			e.printStackTrace();
-		}	
+			System.out.println("Reimbursement inserted");	
 	}
 	
 	/**
@@ -197,15 +186,15 @@ public class ReimbursementDao {
 	 * @param id
 	 * This will be a MANAGER function. Will update when the manager changes a status from pending to
 	 * denied or approved
+	 * @throws SQLException 
 	 */
-	public void updateReimbursement(String status, String resolver, int id) {
+	public void updateReimbursement(String status, String resolver, int id) throws SQLException {
 		String sql = "UPDATE ers_reimbursement "
 				+ "SET reimb_resolved = ?, "
 				+ "reimb_status_id = (SELECT reimb_status_id FROM ers_reimbursement_status WHERE reimb_status = ?), "
 				+ "reimb_resolver = (SELECT ers_users_id FROM ers_users WHERE ers_username = ?) "
 				+ "WHERE reimb_id = ?"; 
 		
-		try {
 			Timestamp time = getCurrentTimeStamp();
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setTimestamp(1, time);
@@ -216,23 +205,18 @@ public class ReimbursementDao {
 			ps.executeUpdate();
 			conn.commit();
 			
-			//selectAll();
-				
-		} catch (SQLException e) {
-			System.out.println("Reimbursement could not be updated.");
-			e.printStackTrace();
-		}	
+			//selectAll();	
 	}
 	
 	/**
 	 * Delete a reimbursement based on its ID
 	 * @param id The ID of the reimbursement to be deleted
 	 * Will probably not be used
+	 * @throws SQLException 
 	 */
-	public void deleteReimbursement(int id) {
+	public void deleteReimbursement(int id) throws SQLException {
 		String sql = "DELETE FROM ers_reimbursement WHERE reimb_id = ?";
 		
-		try {
 			PreparedStatement ps = conn.prepareStatement(sql);
 			ps.setInt(1, id);
 			ps.executeUpdate();
@@ -240,11 +224,6 @@ public class ReimbursementDao {
 			conn.commit();
 			
 			//selectAll();
-			
-		} catch (SQLException e) {
-			System.out.println("Reimbursement could not be deleted");
-			e.printStackTrace();
-		}
 	}
 	
 	/**
@@ -252,25 +231,22 @@ public class ReimbursementDao {
 	 * @param author The author of the reimbursements. 
 	 * Will probably not be used as the reimbursements will be fielded by username not author 
 	 * @return 
+	 * @throws SQLException 
 	 */
-	public ArrayList<Reimbursement> selectReimbursementsByUsername(String username) {
+	public ArrayList<Reimbursement> selectReimbursementsByUsername(String username) throws SQLException {
 		ArrayList<Reimbursement> selectByAuthorQuery = new ArrayList<>();
 		String sql = "SELECT * FROM ers_reimbursement "
 				+ "WHERE reimb_author = (SELECT ers_users_id from ers_users WHERE ers_username = ?)";
 		
-		try {
 			PreparedStatement ps = conn.prepareStatement(sql);
 			
 			ps.setString(1, username);
 			
 			ResultSet rs = ps.executeQuery();
-			
+			System.out.println("before adding to map");
 			mapRows(rs, selectByAuthorQuery);
-			
-		} catch (SQLException e) {
-			System.out.println("Could not get this user's reimbursements");
-			e.printStackTrace();
-		}
+			System.out.println("Mapped!");
+
 		return selectByAuthorQuery;
 	}
 	
@@ -291,20 +267,39 @@ public class ReimbursementDao {
 	 * @return The list containing all the reimbursements that have been added 
 	 * @throws SQLException
 	 */
-	private List<Reimbursement> mapRows(ResultSet rs, List<Reimbursement> query) throws SQLException {
+	private ArrayList<Reimbursement> mapRows(ResultSet rs, ArrayList<Reimbursement> query) throws SQLException {
 		while (rs.next()) {
 			//get all the values from the row
 			int id = rs.getInt("reimb_id");
 			double amount = rs.getDouble("reimb_amount");
 			Timestamp submitDate = rs.getTimestamp("reimb_submitted");
 			Timestamp resolveDate = rs.getTimestamp("reimb_resolved");
+			System.out.println("resolved:" + resolveDate);
+
 			String description = rs.getString("reimb_description");
-			int author = rs.getInt("reimb_author");
-			int resolver = rs.getInt("reimb_resolver");
-			int statusID = rs.getInt("reimb_status_id");
-			int typeID = rs.getInt("reimb_type_id");
 			
-			Reimbursement selectReimb = new Reimbursement(id, amount, submitDate, resolveDate, description, author, resolver, statusID, typeID);
+			int authorID = rs.getInt("reimb_author");
+			UserDao authorDAO = new UserDao(conn);
+			User newAuthor = authorDAO.createNewUser(authorID);
+			
+			int resolver = rs.getInt("reimb_resolver");
+			User newResolver = null;
+			if(resolver !=0) {
+				UserDao resolverDAO = new UserDao(conn);
+				newResolver = resolverDAO.createNewUser(resolver);
+			}
+			
+			System.out.println(resolver);
+			
+			int statusID = rs.getInt("reimb_status_id");
+			ReimbursementStatusDao statusDAO = new ReimbursementStatusDao(conn);
+			ReimbursementStatus newStatus = statusDAO.createNewStatus(statusID);
+			
+			int typeID = rs.getInt("reimb_type_id");
+			ReimbursementTypeDao typeDAO = new ReimbursementTypeDao(conn);
+			ReimbursementType newType = typeDAO.createNewType(typeID);
+			
+			Reimbursement selectReimb = new Reimbursement(id, amount, submitDate, resolveDate, description, newAuthor, newResolver, newStatus, newType);
 			
 			query.add(selectReimb);
 		}
@@ -325,7 +320,7 @@ public class ReimbursementDao {
 	
 	/**
 	 * Close the open connection. 
-	 * This method exists in the DAO so this one might not be used
+	 * This method exists in the Facade so this one might not be used
 	 * @param conn The connection to close
 	 */
 	public void closeConnection(Connection conn) {
@@ -335,5 +330,11 @@ public class ReimbursementDao {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	@Override
+	public void close() throws Exception {
+		conn.close();
 	}
 }

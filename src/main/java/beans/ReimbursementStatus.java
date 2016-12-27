@@ -1,5 +1,13 @@
 package beans;
 
+/**
+ * The ERS_REIMBURSEMENT_STATUS object acts like the TYPE and ROLE
+ * objects in that it allows easy access to the actual status of the 
+ * reimbursement object without needing to perform logic on the numerical
+ * representation of the status.
+ * @author sgace
+ *
+ */
 public class ReimbursementStatus {
 	private int statusID;
 	private String status;

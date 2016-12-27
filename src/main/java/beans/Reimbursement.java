@@ -4,11 +4,12 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 /**
- * 
- * @author sgace
- * The reimbursement class representing a Reimbursement object.
+ * The reimbursement class representing an ERS_REIMBURSEMENT object.
  * The reimbursement table is the main table that the ERS system is 
- * going to use 
+ * going to use. Only the id and amount take primitive types. Every other 
+ * field must take some sort of object, whether system (Timestamp) or 
+ * another reimbursement object. 
+ * @author sgace 
  *
  */
 public class Reimbursement {

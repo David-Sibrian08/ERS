@@ -1,5 +1,11 @@
 package beans;
 
+/**
+ * An ERS_USER_ROLE object. Every user must have a role, therefore every user
+ * must have a Role object that represents their actual role and not a numerical value.
+ * @author sgace
+ *
+ */
 public class Role {
 	private int roleID;
 	private String role;

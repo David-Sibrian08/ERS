@@ -1,5 +1,11 @@
 package beans;
 
+/**
+ * The ERS_USER object. Every user must exist within the database and 
+ * have every field accounted for. A user role is represented by a Role object
+ * @author sgace
+ *
+ */
 public class User {
 	private int userID;
 	private String userName;
@@ -7,14 +13,14 @@ public class User {
 	private String firstName;
 	private String lastName;
 	private String email;
-	private int role;
+	private Role role;
 	
 	public User() {
 		super();
 	}
 
 	public User(int userID, String userName, String password, String firstName, String lastName, String email,
-			int roleId) {
+			Role role) {
 		super();
 		this.userID = userID;
 		this.userName = userName;
@@ -22,7 +28,7 @@ public class User {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
-		this.role = roleId;
+		this.role = role;
 	}
 
 	public int getUserID() {
@@ -73,11 +79,11 @@ public class User {
 		this.email = email;
 	}
 
-	public int getRole() {
+	public Role getRole() {
 		return role;
 	}
 
-	public void setRole(int role) {
+	public void setRole(Role role) {
 		this.role = role;
 	}
 	
