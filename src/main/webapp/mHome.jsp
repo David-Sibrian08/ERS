@@ -357,16 +357,13 @@ $(document).ready( function () {
 <body>
 	<ul class="topnav" id="myTopnav">
 		<li><a class="disabled" href="" style="font-weight: bold">Hi,
-				${user.firstName}</a></li>
+				${user.firstName} ${user.lastName}</a></li>
 		<form method="POST" action="logout.do">
 			<li style="float: right"><a href="/ERS/login.jsp">Log Out</a></li>
 		</form>
 	</ul>
 
-	<%
-		ArrayList<Reimbursement> userReimbursements = (ArrayList<Reimbursement>) request
-				.getAttribute("managerInfo");
-	%>
+
 	<h1>
 		<span class="blue"></span>Expense<span class="blue"></span>Reimbursements Console
 	</h1>
