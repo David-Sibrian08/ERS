@@ -382,7 +382,7 @@ $(document).ready( function () {
 				<!-- <th><h1>Resolved By</h1></th> -->
 				<th><h1>Type</h1></th>
 				<th><h1>Status</h1></th>
-				<th><h1></h1></th>
+				<th><h1>Action</h1></th>
 			</tr>
 		</thead>
 		<tbody>
